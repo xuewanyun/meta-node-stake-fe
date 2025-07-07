@@ -4,6 +4,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+export const YourApp = () => {
+  return <ConnectButton />;
+};
 
 const tabs = [
   { name: "Stake", path: "/home" },
@@ -46,9 +50,10 @@ export default function Header() {
             })}
           </nav>
         </div>
-        <button className="bg-primary hover:bg-blue-600 transition px-4 py-2 rounded-full text-sm font-medium shadow">
+        {/* <ConnectButton />; */}
+        {/* <button className="bg-primary hover:bg-blue-600 transition px-4 py-2 rounded-full text-sm font-medium shadow">
           Connect Wallet
-        </button>
+        </button> */}
       </div>
     </div>
   );

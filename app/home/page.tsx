@@ -4,27 +4,43 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { motion } from "framer-motion";
-
+import { FiArrowDown, FiInfo, FiZap, FiTrendingUp } from "react-icons/fi";
 const tabs = ["stake", "withdraw"];
 
 const Home: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState("stake");
   const router = useRouter();
 
-  const handleTabChange = (tab: string) => {
-    setSelectedTab(tab);
-    router.push(`/${tab.toLowerCase()}`);
-  };
-
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-white font-sans px-4">
+    <div className="min-h-screen bg-[#0b0f19] text-white font-sans">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-center mb-6"
+      >
+        <div className="flex justify-center pt-[20px]">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="w-24 h-24 rounded-full border-2 border-primary-500/20 flex items-center justify-center shadow-xl"
+            style={{ boxShadow: "0 0 60px 0 rgba(14,165,233,0.15)" }}
+          >
+            <FiZap className="w-12 h-12 text-primary-500" />
+          </motion.div>
+        </div>
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text  mb-2">
+          MetaNode Stake
+        </h1>
+        <p className="text-gray-400 text-xl">Stake ETH to earn tokens</p>
+      </motion.div>
       <motion.section
         key={selectedTab}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.5 }}
-        className="flex justify-center mt-10"
+        className="flex justify-center pb-[20px]"
       >
         <div className="w-full max-w-md bg-[#101827] rounded-2xl shadow-xl p-6 text-center border border-gray-700">
           <div className="mb-6">
