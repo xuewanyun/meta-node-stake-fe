@@ -14,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html>
       <body className="bg-[#0b0f19] text-white">
         <Provider>
           <Header />
