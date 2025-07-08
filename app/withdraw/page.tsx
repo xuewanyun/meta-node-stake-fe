@@ -46,7 +46,7 @@ const WithDraw: React.FC = () => {
           <div className="relative">
             <input
               type="number"
-              className="w-full bg-[#2a2e38] rounded-xl px-4 py-3 text-white outline-none"
+              className="w-full bg-[#2a2e38] rounded-xl px-4 py-3 text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               placeholder="0.0"
               disabled
             />
