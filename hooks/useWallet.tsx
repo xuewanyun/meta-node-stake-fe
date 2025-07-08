@@ -9,6 +9,7 @@ export default function useWallet() {
       try {
         const accounts = await window.ethereum.request({
           method: "eth_accounts",
+          // method: "eth_requestAccounts",
         });
         if (accounts.length > 0) {
           setAccount(accounts[0]);

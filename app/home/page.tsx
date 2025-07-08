@@ -3,6 +3,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { FiInfo, FiZap } from "react-icons/fi";
 import { BrowserProvider, Contract, ethers } from "ethers";
+import { useAccount, useConnect, useDisconnect, useWalletClient } from "wagmi";
 import useWallet from "@/hooks/useWallet";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { stakeAbi } from "../lib/abi/stake";
@@ -10,27 +11,32 @@ const tabs = ["stake", "withdraw"];
 
 const Home: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState("stake");
-  const { account, isConnected } = useWallet();
-  const provider = new BrowserProvider(window.ethereum);
+  // const { account, isConnected } = useWallet();
+  const { data: walletClient } = useWalletClient();
+  const { address, isConnected } = useAccount();
 
-  console.info("account---------:", account, isConnected);
+  console.info("account---------:", address, isConnected);
 
   const handleStake = async () => {
     if (!isConnected) {
       return;
     }
     try {
+      const provider = new BrowserProvider(walletClient?.transport);
       const signer = await provider.getSigner();
+      const address = await signer.getAddress();
+      const network = (await provider.getNetwork()).name;
+      console.info("获取signer相关信息", address, network);
       // Replace with your staking contract address and ABI
-      const contractAddress = "0xYourStakingContractAddress";
+      const contractAddress = "0x264e0349deEeb6e8000D40213Daf18f8b3dF02c3";
 
       const stakingContract = new Contract(contractAddress, stakeAbi, signer);
 
       // Replace with the actual amount to stake
-      const amountToStake = ethers.parseEther("0.01");
-      const tx = await stakingContract.stake({ value: amountToStake });
-      await tx.wait();
-      console.log("Stake successful:", tx);
+      const amountToStake = ethers.parseEther("0.001");
+      const tx = await stakingContract.depositETH({ value: amountToStake });
+      const res = await tx.wait();
+      console.log("res===========等待:", res);
     } catch (error) {
       console.error("Error staking:", error);
     }
