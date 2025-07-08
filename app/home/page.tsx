@@ -2,8 +2,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { FiInfo, FiZap } from "react-icons/fi";
-import { BrowserProvider } from "ethers";
+import { BrowserProvider, Contract, ethers } from "ethers";
 import useWallet from "@/hooks/useWallet";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { stakeAbi } from "../lib/abi/stake";
 const tabs = ["stake", "withdraw"];
 
 const Home: React.FC = () => {
@@ -13,6 +15,26 @@ const Home: React.FC = () => {
 
   console.info("account---------:", account, isConnected);
 
+  const handleStake = async () => {
+    if (!isConnected) {
+      return;
+    }
+    try {
+      const signer = await provider.getSigner();
+      // Replace with your staking contract address and ABI
+      const contractAddress = "0xYourStakingContractAddress";
+
+      const stakingContract = new Contract(contractAddress, stakeAbi, signer);
+
+      // Replace with the actual amount to stake
+      const amountToStake = ethers.parseEther("0.01");
+      const tx = await stakingContract.stake({ value: amountToStake });
+      await tx.wait();
+      console.log("Stake successful:", tx);
+    } catch (error) {
+      console.error("Error staking:", error);
+    }
+  };
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white font-sans">
       <motion.div
@@ -65,10 +87,18 @@ const Home: React.FC = () => {
               </span>
             </div>
           </div>
-
-          <button className="w-full bg-blue-500 hover:bg-blue-600 transition py-3 rounded-xl font-semibold">
-            Connect Wallet
-          </button>
+          <div>
+            {isConnected ? (
+              <button
+                className="w-full bg-blue-500 hover:bg-blue-600 transition py-3 rounded-xl font-semibold"
+                onClick={handleStake}
+              >
+                Stake ETH
+              </button>
+            ) : (
+              <ConnectButton></ConnectButton>
+            )}
+          </div>
         </div>
       </motion.section>
     </div>
