@@ -50,7 +50,9 @@ export default function Header() {
             })}
           </nav>
         </div>
-        <ConnectButton />;
+        <div className="bg-primary hover:bg-blue-600 transition px-4 py-2 rounded-full text-sm font-medium shadow">
+          <ConnectButton />
+        </div>
         {/* <button className="bg-primary hover:bg-blue-600 transition px-4 py-2 rounded-full text-sm font-medium shadow">
           Connect Wallet
         </button> */}

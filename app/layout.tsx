@@ -1,6 +1,7 @@
 // "use client";
 import type { Metadata } from "next";
 import "./globals.css";
+
 import Header from "@/components/layout/Header";
 import Provider from "./provider";
 export const metadata: Metadata = {

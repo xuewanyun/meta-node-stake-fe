@@ -1,15 +1,17 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-
 import { motion } from "framer-motion";
-import { FiArrowDown, FiInfo, FiZap, FiTrendingUp } from "react-icons/fi";
+import { FiInfo, FiZap } from "react-icons/fi";
+import { BrowserProvider } from "ethers";
+import useWallet from "@/hooks/useWallet";
 const tabs = ["stake", "withdraw"];
 
 const Home: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState("stake");
-  const router = useRouter();
+  const { account, isConnected } = useWallet();
+  const provider = new BrowserProvider(window.ethereum);
+
+  console.info("account---------:", account, isConnected);
 
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white font-sans">
