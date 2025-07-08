@@ -8,7 +8,7 @@ export default function useWallet() {
     if (typeof window.ethereum !== "undefined") {
       try {
         const accounts = await window.ethereum.request({
-          method: "eth_requestAccounts",
+          method: "eth_accounts",
         });
         if (accounts.length > 0) {
           setAccount(accounts[0]);
@@ -31,8 +31,10 @@ export default function useWallet() {
     console.info("Accounts changed:", accounts);
     if (accounts.length > 0) {
       setAccount(accounts[0]);
+      setIsConnected(true);
     } else {
       setAccount(null);
+      setIsConnected(false);
     }
   };
   React.useEffect(() => {
