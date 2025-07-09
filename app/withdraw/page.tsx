@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import React, { useState, useEffect } from "react";
 import { useAccount, useWalletClient } from "wagmi";
 import { formatEther } from "ethers";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 const WithDraw: React.FC = () => {
   const { data: walletClient } = useWalletClient();
@@ -87,13 +88,17 @@ const WithDraw: React.FC = () => {
         </div>
 
         {/* Connect Wallet */}
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          className="bg-blue-500 hover:bg-blue-600 transition-all w-full py-3 rounded-xl text-white font-semibold"
-          onClick={() => {}}
-        >
-          Connect Wallet
-        </motion.button>
+        {isConnected ? (
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            className="bg-blue-500 hover:bg-blue-600 transition-all w-full py-3 rounded-xl text-white font-semibold"
+            onClick={() => {}}
+          >
+            unStack ETH
+          </motion.button>
+        ) : (
+          <ConnectButton></ConnectButton>
+        )}
 
         {/* Withdraw Section */}
         <div className="bg-[#2a2e38] p-4 rounded-xl">
@@ -101,7 +106,9 @@ const WithDraw: React.FC = () => {
             <span>Ready to Withdraw</span>
             <span>⏱️ 20 min cooldown</span>
           </div>
-          <div className="text-blue-300 font-mono text-lg">0.0000 ETH</div>
+          <div className="text-blue-300 font-mono text-lg">
+            {userData?.availableAmount} ETH
+          </div>
         </div>
 
         <p className="text-xs text-gray-500 mt-2 text-center">
@@ -112,6 +119,8 @@ const WithDraw: React.FC = () => {
         <motion.button
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.97 }}
+          disabled={!userData.availableAmount}
+          onClick={() => {}}
           className="bg-blue-600 hover:bg-blue-700 transition-all w-full py-3 rounded-xl text-white font-bold"
         >
           ↑ Withdraw ETH
