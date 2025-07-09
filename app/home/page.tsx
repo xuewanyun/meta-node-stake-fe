@@ -1,10 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FiInfo, FiZap } from "react-icons/fi";
 import { BrowserProvider, Contract, ethers } from "ethers";
-import { useAccount, useConnect, useDisconnect, useWalletClient } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import useWallet from "@/hooks/useWallet";
+import { toast } from "react-toastify";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { stakeAbi } from "../lib/abi/stake";
 const tabs = ["stake", "withdraw"];
@@ -12,35 +13,65 @@ const tabs = ["stake", "withdraw"];
 const Home: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState("stake");
   // const { account, isConnected } = useWallet();
+  const [amount, setAmount] = useState("");
   const { data: walletClient } = useWalletClient();
   const { address, isConnected } = useAccount();
+  const [balance, setBalance] = useState("0.0");
 
-  console.info("account---------:", address, isConnected);
-
+  console.info("account---------:", address, isConnected, walletClient);
+  // 获取余额
+  const getBalance = async () => {
+    if (!address || !walletClient?.transport) return "0.0";
+    const provider = new BrowserProvider(walletClient.transport as any);
+    const balance = await provider.getBalance(address);
+    setBalance(parseFloat(ethers.formatEther(balance)).toFixed(4));
+    return ethers.formatEther(balance);
+  };
+  // 写入合约
   const handleStake = async () => {
+    // @ts-ignore
+    const provider = new BrowserProvider(walletClient.transport as any);
+    const signer = await provider.getSigner();
+    // Replace with your staking contract address and ABI
+    const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+    console.info("合约地址:", contractAddress);
+
     if (!isConnected) {
       return;
     }
+    if (!contractAddress) {
+      throw new Error(
+        "Contract address is not defined in environment variables"
+      );
+    }
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+    if (!walletClient?.transport) {
+      throw new Error("Wallet client is not available");
+    }
     try {
-      const provider = new BrowserProvider(walletClient?.transport);
-      const signer = await provider.getSigner();
-      const address = await signer.getAddress();
-      const network = (await provider.getNetwork()).name;
-      console.info("获取signer相关信息", address, network);
-      // Replace with your staking contract address and ABI
-      const contractAddress = "0x264e0349deEeb6e8000D40213Daf18f8b3dF02c3";
-
       const stakingContract = new Contract(contractAddress, stakeAbi, signer);
-
-      // Replace with the actual amount to stake
-      const amountToStake = ethers.parseEther("0.001");
+      const amountToStake = ethers.parseEther(amount);
       const tx = await stakingContract.depositETH({ value: amountToStake });
       const res = await tx.wait();
+      if (res.status === 1) {
+        setAmount("");
+        toast.success("Staking successful!");
+        getBalance(); // Refresh balance after staking
+      }
       console.log("res===========等待:", res);
     } catch (error) {
       console.error("Error staking:", error);
     }
   };
+
+  useEffect(() => {
+    if (isConnected) {
+      getBalance();
+    }
+  }, [isConnected, address, walletClient]);
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white font-sans">
       <motion.div
@@ -75,7 +106,9 @@ const Home: React.FC = () => {
         <div className="w-full max-w-md bg-[#101827] rounded-2xl shadow-xl p-6 text-center border border-gray-700">
           <div className="mb-6">
             <div className="text-gray-400 text-sm">Staked Amount</div>
-            <div className="text-3xl font-bold text-blue-400">0.0000 ETH</div>
+            <div className="text-3xl font-bold text-blue-400">
+              {balance} ETH
+            </div>
           </div>
 
           <div className="mb-6 text-left">
@@ -86,7 +119,9 @@ const Home: React.FC = () => {
               <input
                 type="number"
                 placeholder="0.0"
+                value={amount}
                 className="w-full bg-[#0d121e] border border-gray-700 rounded-xl py-3 px-4 text-white placeholder-gray-500"
+                onChange={(e) => setAmount(e.target.value)}
               />
               <span className="absolute right-4 top-3.5 text-gray-400">
                 ETH
