@@ -9,22 +9,43 @@ import { toast } from "react-toastify";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { getStakingContract } from "@/utils/getContract";
 const tabs = ["stake", "withdraw"];
+import {
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  useReadContract,
+  useBalance,
+} from "wagmi";
+import { stakeAbi } from "@/app/lib/abi/stake";
 
 const Home: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState("stake");
-  // const { account, isConnected } = useWallet();
   const [amount, setAmount] = useState("");
   const { data: walletClient } = useWalletClient();
   const { address, isConnected } = useAccount();
-  const [balance, setBalance] = useState("0.0");
-  // 获取余额
-  const getBalance = async () => {
-    if (!address || !walletClient?.transport) return "0.0";
-    const provider = new BrowserProvider(walletClient.transport as any);
-    const balance = await provider.getBalance(address);
-    setBalance(parseFloat(ethers.formatEther(balance)).toFixed(4));
-    return ethers.formatEther(balance);
-  };
+  const { data: balance } = useBalance({
+    address,
+    query: {
+      enabled: !!address,
+    },
+  });
+  const { writeContract, writeContractAsync } = useWriteContract();
+
+  console.log("balance===========:", balance);
+  const [hash, setHash] = useState<`0x${string}` | undefined>();
+  const {
+    data: receipt,
+    isLoading,
+    isSuccess,
+    isError,
+    isPending,
+    error,
+    isFetching,
+  } = useWaitForTransactionReceipt({
+    hash,
+    query: {
+      enabled: !!hash, // ✅ 通过 query.enabled 控制请求是否启用
+    },
+  });
   // 写入合约
   const handleStake = async () => {
     if (!isConnected) {
@@ -38,33 +59,34 @@ const Home: React.FC = () => {
       toast.error("Please enter a valid amount");
       return;
     }
-    if (Number(amount) > parseFloat(balance)) {
+    if (Number(amount) > Number(ethers.formatEther(balance?.value || 0))) {
       toast.error("Insufficient balance");
       return;
     }
 
-    const stakingContract = await getStakingContract(walletClient);
-
     try {
       const amountToStake = ethers.parseEther(amount);
-      const tx = await stakingContract.depositETH({ value: amountToStake });
-      const res = await tx.wait();
-      if (res.status === 1) {
-        setAmount("");
+      console.log("amountToStake===========:", amountToStake, amount);
+      const hash = await writeContractAsync({
+        address: process.env
+          .NEXT_PUBLIC_STAKING_CONTRACT_ADDRESS as `0x${string}`,
+        abi: stakeAbi,
+        functionName: "depositETH",
+        args: [],
+        value: amountToStake,
+      });
+      setHash(hash);
+      if (isSuccess) {
         toast.success("Staking successful!");
-        getBalance(); // Refresh balance after staking
+        setAmount("");
       }
-      console.log("res===========等待:", res);
+
+      console.log("res===========等待:", hash, receipt);
     } catch (error) {
       console.error("Error staking:", error);
     }
   };
 
-  useEffect(() => {
-    if (isConnected) {
-      getBalance();
-    }
-  }, [isConnected, address, walletClient]);
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white font-sans">
       <motion.div
@@ -100,7 +122,10 @@ const Home: React.FC = () => {
           <div className="mb-6">
             <div className="text-gray-400 text-sm">Staked Amount</div>
             <div className="text-3xl font-bold text-blue-400">
-              {balance} ETH
+              {balance?.value
+                ? Number(ethers.formatEther(balance?.value)).toFixed(4)
+                : "0.0"}{" "}
+              ETH
             </div>
           </div>
 
