@@ -28,9 +28,6 @@ const Home: React.FC = () => {
   };
   // 写入合约
   const handleStake = async () => {
-    // @ts-ignore
-    const stakingContract = await getStakingContract(walletClient);
-
     if (!isConnected) {
       return;
     }
@@ -43,6 +40,10 @@ const Home: React.FC = () => {
       toast.error("Insufficient balance");
       return;
     }
+    // @ts-ignore
+
+    const stakingContract = await getStakingContract(walletClient);
+
     try {
       const amountToStake = ethers.parseEther(amount);
       const tx = await stakingContract.depositETH({ value: amountToStake });

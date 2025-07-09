@@ -1,17 +1,43 @@
 "use client";
+import { getStakingContract } from "@/utils/getContract";
 import { motion } from "framer-motion";
-import React, { use, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { useAccount, useWalletClient } from "wagmi";
+import { formatEther } from "ethers";
 
 const WithDraw: React.FC = () => {
-  const [walletConnected, setWalletConnected] = React.useState(false);
-
+  const { data: walletClient } = useWalletClient();
+  const { address, isConnected } = useAccount();
+  const [userData, setUserData] = useState<Record<string, any>>({
+    stakedAmount: "0.0",
+    availableAmount: "0.0",
+    pendingAmount: "0.0",
+  });
   const getUserData = async () => {
-    // Simulate fetching user data
-    if (!walletConnected) return;
+    if (!isConnected) return;
+    console.info("address:", walletClient);
+
+    // @ts-ignore
+    // 质押的金额
+    const stakingContract = await getStakingContract(walletClient);
+    const stakedAmount = await stakingContract.stakingBalance(0, address);
+
+    const [requestAmount, pendingWithdrawAmount] =
+      await stakingContract.withdrawAmount(0, address);
+    const available = Number(formatEther(pendingWithdrawAmount)); // 可用的金额
+    const total = Number(formatEther(requestAmount)); // 总请求的金额
+    const pending = formatEther(stakedAmount); // 待处理的金额
+    setUserData({
+      stakedAmount: pending,
+      availableAmount: available.toFixed(4),
+      pendingAmount: (total - available).toFixed(4),
+    });
   };
   useEffect(() => {
-    getUserData();
-  }, [walletConnected]);
+    if (isConnected && walletClient) {
+      getUserData();
+    }
+  }, [isConnected, walletClient]);
   return (
     <div className="min-h-screen bg-[#0e1117] flex items-center justify-center px-4">
       <motion.div
@@ -29,21 +55,19 @@ const WithDraw: React.FC = () => {
 
         {/* Info Cards */}
         <div className="grid grid-cols-3 gap-4">
-          {["Staked Amount", "Available to Withdraw", "Pending Withdraw"].map(
-            (title) => (
-              <motion.div
-                key={title}
-                className="bg-[#2a2e38] rounded-xl p-4 text-center"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 200 }}
-              >
-                <div className="text-xs text-gray-400">{title}</div>
-                <div className="text-blue-300 font-mono text-lg">
-                  0.0000 ETH
-                </div>
-              </motion.div>
-            )
-          )}
+          {["stakedAmount", "availableAmount", "pendingAmount"].map((title) => (
+            <motion.div
+              key={title}
+              className="bg-[#2a2e38] rounded-xl p-4 text-center"
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 200 }}
+            >
+              <div className="text-xs text-gray-400">{title}</div>
+              <div className="text-blue-300 font-mono text-lg">
+                {userData[title]}ETH
+              </div>
+            </motion.div>
+          ))}
         </div>
 
         {/* Unstake Section */}
@@ -66,7 +90,7 @@ const WithDraw: React.FC = () => {
         <motion.button
           whileTap={{ scale: 0.95 }}
           className="bg-blue-500 hover:bg-blue-600 transition-all w-full py-3 rounded-xl text-white font-semibold"
-          onClick={() => setWalletConnected(true)}
+          onClick={() => {}}
         >
           Connect Wallet
         </motion.button>
