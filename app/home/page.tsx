@@ -17,7 +17,6 @@ const Home: React.FC = () => {
   const { data: walletClient } = useWalletClient();
   const { address, isConnected } = useAccount();
   const [balance, setBalance] = useState("0.0");
-  console.info("account---------:", address, isConnected, walletClient);
   // 获取余额
   const getBalance = async () => {
     if (!address || !walletClient?.transport) return "0.0";
@@ -31,7 +30,10 @@ const Home: React.FC = () => {
     if (!isConnected) {
       return;
     }
-
+    if (!walletClient) {
+      toast.error("Please connect your wallet");
+      return;
+    }
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
       toast.error("Please enter a valid amount");
       return;
@@ -40,7 +42,6 @@ const Home: React.FC = () => {
       toast.error("Insufficient balance");
       return;
     }
-    // @ts-ignore
 
     const stakingContract = await getStakingContract(walletClient);
 
