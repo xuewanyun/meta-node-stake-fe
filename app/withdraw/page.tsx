@@ -1,9 +1,17 @@
 "use client";
 import { motion } from "framer-motion";
-import React, { use } from "react";
+import React, { use, useEffect } from "react";
 
 const WithDraw: React.FC = () => {
   const [walletConnected, setWalletConnected] = React.useState(false);
+
+  const getUserData = async () => {
+    // Simulate fetching user data
+    if (!walletConnected) return;
+  };
+  useEffect(() => {
+    getUserData();
+  }, [walletConnected]);
   return (
     <div className="min-h-screen bg-[#0e1117] flex items-center justify-center px-4">
       <motion.div

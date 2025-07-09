@@ -7,7 +7,7 @@ import { useAccount, useWalletClient } from "wagmi";
 import useWallet from "@/hooks/useWallet";
 import { toast } from "react-toastify";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { stakeAbi } from "../lib/abi/stake";
+import { getStakingContract } from "@/utils/getContract";
 const tabs = ["stake", "withdraw"];
 
 const Home: React.FC = () => {
@@ -17,7 +17,6 @@ const Home: React.FC = () => {
   const { data: walletClient } = useWalletClient();
   const { address, isConnected } = useAccount();
   const [balance, setBalance] = useState("0.0");
-
   console.info("account---------:", address, isConnected, walletClient);
   // 获取余额
   const getBalance = async () => {
@@ -30,29 +29,21 @@ const Home: React.FC = () => {
   // 写入合约
   const handleStake = async () => {
     // @ts-ignore
-    const provider = new BrowserProvider(walletClient.transport as any);
-    const signer = await provider.getSigner();
-    // Replace with your staking contract address and ABI
-    const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
-    console.info("合约地址:", contractAddress);
+    const stakingContract = await getStakingContract(walletClient);
 
     if (!isConnected) {
       return;
     }
-    if (!contractAddress) {
-      throw new Error(
-        "Contract address is not defined in environment variables"
-      );
-    }
+
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
       toast.error("Please enter a valid amount");
       return;
     }
-    if (!walletClient?.transport) {
-      throw new Error("Wallet client is not available");
+    if (Number(amount) > parseFloat(balance)) {
+      toast.error("Insufficient balance");
+      return;
     }
     try {
-      const stakingContract = new Contract(contractAddress, stakeAbi, signer);
       const amountToStake = ethers.parseEther(amount);
       const tx = await stakingContract.depositETH({ value: amountToStake });
       const res = await tx.wait();
