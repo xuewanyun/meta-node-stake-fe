@@ -1,16 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { FiInfo, FiZap } from "react-icons/fi";
-import { BrowserProvider, Contract, ethers } from "ethers";
+import { FiZap } from "react-icons/fi";
+import { ethers } from "ethers";
 import { useAccount, useWalletClient } from "wagmi";
-import useWallet from "@/hooks/useWallet";
 import { toast } from "react-toastify";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { getStakingContract } from "@/utils/getContract";
 import { getEnv } from "@/utils/getEnv";
-
-import { useWriteContract, useBalance } from "wagmi";
+import { useWriteContract, useBalance, useReadContract } from "wagmi";
 import { stakeAbi } from "@/app/lib/abi/stake";
 import { waitForTransactionReceipt } from "viem/actions";
 const { STAKING_CONTRACT_ADDRESS } = getEnv();
@@ -26,6 +23,13 @@ const Home: React.FC = () => {
     },
   });
   const { writeContractAsync } = useWriteContract();
+
+  const { data: stakedAmount, refetch } = useReadContract({
+    address: STAKING_CONTRACT_ADDRESS as `0x${string}`,
+    abi: stakeAbi,
+    functionName: "stakingBalance",
+    args: [ethers.parseEther("0"), address as `0x${string}`],
+  });
 
   // 写入合约
   const handleStake = async () => {
@@ -58,6 +62,7 @@ const Home: React.FC = () => {
         hash,
       });
       if (res.status === "success") {
+        await refetch();
         toast.success("Staking successful!");
         setAmount("");
       }
@@ -101,10 +106,7 @@ const Home: React.FC = () => {
           <div className="mb-6">
             <div className="text-gray-400 text-sm">Staked Amount</div>
             <div className="text-3xl font-bold text-blue-400">
-              {balance?.value
-                ? Number(ethers.formatEther(balance?.value)).toFixed(4)
-                : "0.0"}{" "}
-              ETH
+              {ethers.formatEther(stakedAmount || 0)}ETH
             </div>
           </div>
 
