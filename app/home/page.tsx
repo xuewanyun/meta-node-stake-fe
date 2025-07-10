@@ -8,10 +8,9 @@ import useWallet from "@/hooks/useWallet";
 import { toast } from "react-toastify";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { getStakingContract } from "@/utils/getContract";
-const tabs = ["stake", "withdraw"];
 
 const Home: React.FC = () => {
-  const [selectedTab, setSelectedTab] = useState("stake");
+  const [selectedTab, setSelectedTab] = useState("home");
   // const { account, isConnected } = useWallet();
   const [amount, setAmount] = useState("");
   const { data: walletClient } = useWalletClient();
