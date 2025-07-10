@@ -1,12 +1,11 @@
 "use client";
-import { getStakingContract } from "@/utils/getContract";
 import { motion } from "framer-motion";
 import React, { useState, useEffect } from "react";
 import {
   useAccount,
   useWalletClient,
-  useReadContract,
   useReadContracts,
+  useWriteContract,
 } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { toast } from "react-toastify";
@@ -14,6 +13,7 @@ import classNames from "classnames";
 import { ethers, parseEther, formatEther } from "ethers";
 import { stakeAbi } from "../lib/abi/stake";
 import { getEnv } from "@/utils/getEnv";
+import { waitForTransactionReceipt } from "viem/actions";
 const { STAKING_CONTRACT_ADDRESS } = getEnv();
 type UserData = Record<string, string>;
 const WithDraw: React.FC = () => {
@@ -24,7 +24,8 @@ const WithDraw: React.FC = () => {
     availableAmount: "0",
     pendingAmount: "0",
   });
-  const { data } = useReadContracts({
+  const { writeContractAsync } = useWriteContract();
+  const { data, refetch } = useReadContracts({
     contracts: address
       ? [
           {
@@ -68,11 +69,19 @@ const WithDraw: React.FC = () => {
   const handleWithdraw = async () => {
     if (!isConnected) return;
     if (!walletClient) return;
-    const stakingContract = await getStakingContract(walletClient);
-    const tx = await stakingContract.withdraw(0);
-    const res = await tx.wait();
-    if (res.status === 1) {
+
+    const hash = await writeContractAsync({
+      address: STAKING_CONTRACT_ADDRESS as `0x${string}`,
+      abi: stakeAbi,
+      functionName: "withdraw",
+      args: [parseEther("0")],
+    });
+    const res = await waitForTransactionReceipt(walletClient, {
+      hash,
+    });
+    if (res.status === "success") {
       toast.success("Withdraw successful!");
+      await refetch();
       getUserData();
     }
     console.info("handleWithdraw=======:", res); //withdraw
@@ -89,12 +98,18 @@ const WithDraw: React.FC = () => {
       toast.error("Unstack amount is greater than staked amount!");
       return;
     }
-
-    const stakingContract = await getStakingContract(walletClient);
-    const tx = await stakingContract.unstake(0, parseEther(unstackAmount));
-    const res = await tx.wait();
-    if (res.status === 1) {
+    const hash = await writeContractAsync({
+      address: STAKING_CONTRACT_ADDRESS as `0x${string}`,
+      abi: stakeAbi,
+      functionName: "unstake",
+      args: [parseEther("0"), parseEther(unstackAmount)],
+    });
+    const res = await waitForTransactionReceipt(walletClient, {
+      hash,
+    });
+    if (res.status === "success") {
       toast.success("Unstack successful!");
+      await refetch();
       getUserData();
       setUnstackAmount("");
     }
