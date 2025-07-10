@@ -16,6 +16,7 @@ const Home: React.FC = () => {
   const { data: walletClient } = useWalletClient();
   const { address, isConnected } = useAccount();
   const [balance, setBalance] = useState("0.0");
+  const [stakedAmount, setStakedAmount] = useState("0.0");
   // 获取余额
   const getBalance = async () => {
     if (!address || !walletClient?.transport) return "0.0";
@@ -23,6 +24,15 @@ const Home: React.FC = () => {
     const balance = await provider.getBalance(address);
     setBalance(parseFloat(ethers.formatEther(balance)).toFixed(4));
     return ethers.formatEther(balance);
+  };
+  // 获取质押金额
+  const getStakeAmount = async () => {
+    if (!walletClient) return;
+    if (!address || !walletClient?.transport) return "0.0";
+    const stakingContract = await getStakingContract(walletClient);
+    const res = await stakingContract.stakingBalance(0, address);
+    const stakedAmount = ethers.formatEther(res);
+    setStakedAmount(stakedAmount);
   };
   // 写入合约
   const handleStake = async () => {
@@ -51,7 +61,7 @@ const Home: React.FC = () => {
       if (res.status === 1) {
         setAmount("");
         toast.success("Staking successful!");
-        getBalance(); // Refresh balance after staking
+        getStakeAmount(); // Refresh balance after staking
       }
       console.log("res===========等待:", res);
     } catch (error) {
@@ -61,6 +71,7 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     if (isConnected) {
+      getStakeAmount();
       getBalance();
     }
   }, [isConnected, address, walletClient]);
@@ -99,7 +110,7 @@ const Home: React.FC = () => {
           <div className="mb-6">
             <div className="text-gray-400 text-sm">Staked Amount</div>
             <div className="text-3xl font-bold text-blue-400">
-              {balance} ETH
+              {stakedAmount} ETH
             </div>
           </div>
 
@@ -125,6 +136,7 @@ const Home: React.FC = () => {
               <button
                 className="w-full bg-blue-500 hover:bg-blue-600 transition py-3 rounded-xl font-semibold"
                 onClick={handleStake}
+                disabled={!Number(stakedAmount)}
               >
                 Stake ETH
               </button>
