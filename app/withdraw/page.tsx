@@ -2,13 +2,19 @@
 import { getStakingContract } from "@/utils/getContract";
 import { motion } from "framer-motion";
 import React, { useState, useEffect } from "react";
-import { useAccount, useWalletClient } from "wagmi";
-import { formatEther } from "ethers";
+import {
+  useAccount,
+  useWalletClient,
+  useReadContract,
+  useReadContracts,
+} from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { toast } from "react-toastify";
 import classNames from "classnames";
-import { ethers, parseEther } from "ethers";
-
+import { ethers, parseEther, formatEther } from "ethers";
+import { stakeAbi } from "../lib/abi/stake";
+import { getEnv } from "@/utils/getEnv";
+const { STAKING_CONTRACT_ADDRESS } = getEnv();
 type UserData = Record<string, string>;
 const WithDraw: React.FC = () => {
   const { data: walletClient } = useWalletClient();
@@ -18,6 +24,24 @@ const WithDraw: React.FC = () => {
     availableAmount: "0",
     pendingAmount: "0",
   });
+  const { data } = useReadContracts({
+    contracts: address
+      ? [
+          {
+            address: STAKING_CONTRACT_ADDRESS,
+            abi: stakeAbi,
+            functionName: "stakingBalance",
+            args: [parseEther("0"), address as `0x${string}`],
+          },
+          {
+            address: STAKING_CONTRACT_ADDRESS,
+            abi: stakeAbi,
+            functionName: "withdrawAmount",
+            args: [parseEther("0"), address as `0x${string}`],
+          },
+        ]
+      : undefined,
+  });
 
   const [unstackAmount, setUnstackAmount] = useState("");
   // 获取用户数据
@@ -25,12 +49,10 @@ const WithDraw: React.FC = () => {
     if (!isConnected) return;
     if (!walletClient) return;
     // 质押的金额
-    const stakingContract = await getStakingContract(walletClient);
-
-    const stakedAmount = await stakingContract.stakingBalance(0, address);
+    const stakedAmount = (data ?? [])[0]?.result || "0"; // 质押的金额
 
     const [requestAmount, pendingWithdrawAmount] =
-      await stakingContract.withdrawAmount(0, address);
+      (data ?? [])[1]?.result || "0"; // 请求的金额和待处理的金额
 
     const available = Number(formatEther(pendingWithdrawAmount)); // 可用的金额
 
@@ -82,7 +104,7 @@ const WithDraw: React.FC = () => {
     if (isConnected && walletClient) {
       getUserData();
     }
-  }, [isConnected, walletClient]);
+  }, [isConnected, walletClient, data]);
   return (
     <div className="min-h-screen bg-[#0e1117] flex items-center justify-center px-4">
       <motion.div

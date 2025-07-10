@@ -8,17 +8,14 @@ import useWallet from "@/hooks/useWallet";
 import { toast } from "react-toastify";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { getStakingContract } from "@/utils/getContract";
-const tabs = ["stake", "withdraw"];
-import {
-  useWriteContract,
-  useWaitForTransactionReceipt,
-  useReadContract,
-  useBalance,
-} from "wagmi";
-import { stakeAbi } from "@/app/lib/abi/stake";
+import { getEnv } from "@/utils/getEnv";
 
+import { useWriteContract, useBalance } from "wagmi";
+import { stakeAbi } from "@/app/lib/abi/stake";
+import { waitForTransactionReceipt } from "viem/actions";
+const { STAKING_CONTRACT_ADDRESS } = getEnv();
 const Home: React.FC = () => {
-  const [selectedTab, setSelectedTab] = useState("stake");
+  const [selectedTab, setSelectedTab] = useState("home");
   const [amount, setAmount] = useState("");
   const { data: walletClient } = useWalletClient();
   const { address, isConnected } = useAccount();
@@ -28,24 +25,8 @@ const Home: React.FC = () => {
       enabled: !!address,
     },
   });
-  const { writeContract, writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useWriteContract();
 
-  console.log("balance===========:", balance);
-  const [hash, setHash] = useState<`0x${string}` | undefined>();
-  const {
-    data: receipt,
-    isLoading,
-    isSuccess,
-    isError,
-    isPending,
-    error,
-    isFetching,
-  } = useWaitForTransactionReceipt({
-    hash,
-    query: {
-      enabled: !!hash, // ✅ 通过 query.enabled 控制请求是否启用
-    },
-  });
   // 写入合约
   const handleStake = async () => {
     if (!isConnected) {
@@ -66,22 +47,20 @@ const Home: React.FC = () => {
 
     try {
       const amountToStake = ethers.parseEther(amount);
-      console.log("amountToStake===========:", amountToStake, amount);
       const hash = await writeContractAsync({
-        address: process.env
-          .NEXT_PUBLIC_STAKING_CONTRACT_ADDRESS as `0x${string}`,
+        address: STAKING_CONTRACT_ADDRESS as `0x${string}`,
         abi: stakeAbi,
         functionName: "depositETH",
         args: [],
         value: amountToStake,
       });
-      setHash(hash);
-      if (isSuccess) {
+      const res = await waitForTransactionReceipt(walletClient, {
+        hash,
+      });
+      if (res.status === "success") {
         toast.success("Staking successful!");
         setAmount("");
       }
-
-      console.log("res===========等待:", hash, receipt);
     } catch (error) {
       console.error("Error staking:", error);
     }
