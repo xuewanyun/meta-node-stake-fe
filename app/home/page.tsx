@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useContract } from "@/hooks/useContract";
 import { useEthersProvider } from "@/hooks/useEthersProvider";
+import Button from "@/components/ui/Button";
 
 const Home: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState("home");
@@ -19,7 +20,8 @@ const Home: React.FC = () => {
   const { data: walletClient } = useWalletClient();
   const { address, isConnected } = useAccount();
   const [balance, setBalance] = useState("0.0");
-  const [stakedAmount, setStakedAmount] = useState("0.0");
+  const [stakedAmount, setStakedAmount] = useState("");
+  const [loading, setLoading] = useState(false);
   // 获取余额
   const getBalance = async () => {
     if (!address || !walletClient?.transport) return "0.0";
@@ -55,17 +57,20 @@ const Home: React.FC = () => {
     }
 
     try {
+      setLoading(true);
       const amountToStake = ethers.parseEther(amount);
       const tx = await stakingContract.depositETH({ value: amountToStake });
       const res = await tx.wait();
       if (res.status === 1) {
         setAmount("");
         toast.success("Staking successful!");
+        setLoading(false);
         getStakeAmount(); // Refresh balance after staking
       }
       console.log("res===========等待:", res);
     } catch (error) {
       console.error("Error staking:", error);
+      setLoading(false);
     }
   };
 
@@ -133,13 +138,13 @@ const Home: React.FC = () => {
           </div>
           <div>
             {isConnected ? (
-              <button
-                className="w-full bg-blue-500 hover:bg-blue-600 transition py-3 rounded-xl font-semibold"
-                onClick={handleStake}
-                disabled={!Number(stakedAmount)}
+              <Button
+                handleClick={handleStake}
+                disabled={loading || !amount}
+                loading={loading}
               >
                 Stake ETH
-              </button>
+              </Button>
             ) : (
               <ConnectButton></ConnectButton>
             )}
