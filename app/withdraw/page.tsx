@@ -1,5 +1,4 @@
 "use client";
-import { getStakingContract } from "@/utils/getContract";
 import { motion } from "framer-motion";
 import React, { useState, useEffect } from "react";
 import { useAccount, useWalletClient } from "wagmi";
@@ -7,11 +6,13 @@ import { formatEther } from "ethers";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { toast } from "react-toastify";
 import classNames from "classnames";
-import { ethers, parseEther } from "ethers";
+import { parseEther } from "ethers";
+import { useContract } from "@/hooks/useContract";
 
 type UserData = Record<string, string>;
 const WithDraw: React.FC = () => {
   const { data: walletClient } = useWalletClient();
+  const { stakingContract } = useContract();
   const { address, isConnected } = useAccount();
   const [userData, setUserData] = useState<UserData>({
     stakedAmount: "0",
@@ -25,7 +26,6 @@ const WithDraw: React.FC = () => {
     if (!isConnected) return;
     if (!walletClient) return;
     // 质押的金额
-    const stakingContract = await getStakingContract(walletClient);
 
     const stakedAmount = await stakingContract.stakingBalance(0, address);
 
@@ -46,7 +46,6 @@ const WithDraw: React.FC = () => {
   const handleWithdraw = async () => {
     if (!isConnected) return;
     if (!walletClient) return;
-    const stakingContract = await getStakingContract(walletClient);
     const tx = await stakingContract.withdraw(0);
     const res = await tx.wait();
     if (res.status === 1) {
@@ -68,7 +67,6 @@ const WithDraw: React.FC = () => {
       return;
     }
 
-    const stakingContract = await getStakingContract(walletClient);
     const tx = await stakingContract.unstake(0, parseEther(unstackAmount));
     const res = await tx.wait();
     if (res.status === 1) {

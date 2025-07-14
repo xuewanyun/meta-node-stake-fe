@@ -4,9 +4,7 @@ import { useEthersSigner } from "./useEthersSigner";
 import { useEthersProvider } from "./useEthersProvider";
 import { stakeAbi } from "@/app/lib/abi/stake";
 export const useContract = () => {
-  const provider = useEthersProvider();
   const signer = useEthersSigner();
-
   const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
   if (!contractAddress) {
     throw new Error("Contract address is not defined in environment variables");
