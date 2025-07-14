@@ -2,16 +2,19 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FiInfo, FiZap } from "react-icons/fi";
-import { BrowserProvider, Contract, ethers } from "ethers";
+import { ethers } from "ethers";
 import { useAccount, useWalletClient } from "wagmi";
-import useWallet from "@/hooks/useWallet";
 import { toast } from "react-toastify";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { getStakingContract } from "@/utils/getContract";
+import { useContract } from "@/hooks/useContract";
+import { useEthersProvider } from "@/hooks/useEthersProvider";
 
 const Home: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState("home");
-  // const { account, isConnected } = useWallet();
+
+  const { stakingContract } = useContract();
+
+  const provider = useEthersProvider();
   const [amount, setAmount] = useState("");
   const { data: walletClient } = useWalletClient();
   const { address, isConnected } = useAccount();
@@ -20,7 +23,7 @@ const Home: React.FC = () => {
   // 获取余额
   const getBalance = async () => {
     if (!address || !walletClient?.transport) return "0.0";
-    const provider = new BrowserProvider(walletClient.transport as any);
+    if (!provider) return "0.0";
     const balance = await provider.getBalance(address);
     setBalance(parseFloat(ethers.formatEther(balance)).toFixed(4));
     return ethers.formatEther(balance);
@@ -29,7 +32,6 @@ const Home: React.FC = () => {
   const getStakeAmount = async () => {
     if (!walletClient) return;
     if (!address || !walletClient?.transport) return "0.0";
-    const stakingContract = await getStakingContract(walletClient);
     const res = await stakingContract.stakingBalance(0, address);
     const stakedAmount = ethers.formatEther(res);
     setStakedAmount(stakedAmount);
@@ -51,8 +53,6 @@ const Home: React.FC = () => {
       toast.error("Insufficient balance");
       return;
     }
-
-    const stakingContract = await getStakingContract(walletClient);
 
     try {
       const amountToStake = ethers.parseEther(amount);
