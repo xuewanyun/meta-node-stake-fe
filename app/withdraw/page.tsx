@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import classNames from "classnames";
 import { parseEther } from "ethers";
 import { useContract } from "@/hooks/useContract";
+import Button from "@/components/ui/Button";
 
 type UserData = Record<string, string>;
 const WithDraw: React.FC = () => {
@@ -21,6 +22,8 @@ const WithDraw: React.FC = () => {
   });
 
   const [unstackAmount, setUnstackAmount] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [withDrawloading, setWithDrawloading] = useState(false);
   // 获取用户数据
   const getUserData = async () => {
     if (!isConnected) return;
@@ -46,11 +49,13 @@ const WithDraw: React.FC = () => {
   const handleWithdraw = async () => {
     if (!isConnected) return;
     if (!walletClient) return;
+    setWithDrawloading(true);
     const tx = await stakingContract.withdraw(0);
     const res = await tx.wait();
     if (res.status === 1) {
       toast.success("Withdraw successful!");
       getUserData();
+      setWithDrawloading(false);
     }
     console.info("handleWithdraw=======:", res); //withdraw
   };
@@ -66,13 +71,14 @@ const WithDraw: React.FC = () => {
       toast.error("Unstack amount is greater than staked amount!");
       return;
     }
-
+    setLoading(true);
     const tx = await stakingContract.unstake(0, parseEther(unstackAmount));
     const res = await tx.wait();
     if (res.status === 1) {
       toast.success("Unstack successful!");
       getUserData();
       setUnstackAmount("");
+      setLoading(false);
     }
     console.info("handleUnstack=======:", res);
   };
@@ -133,19 +139,13 @@ const WithDraw: React.FC = () => {
 
         {/* Connect Wallet */}
         {isConnected ? (
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            className={classNames(
-              "bg-blue-500 hover:bg-blue-600 transition-all w-full py-3 rounded-xl text-white font-semibold",
-              {
-                "cursor-not-allowed": !Number(userData.stakedAmount),
-              }
-            )}
-            onClick={handleUnstack}
-            disabled={!Number(userData.stakedAmount)}
+          <Button
+            handleClick={handleUnstack}
+            disabled={loading || !unstackAmount}
+            loading={loading}
           >
-            unStack ETH
-          </motion.button>
+            Stake ETH
+          </Button>
         ) : (
           <div className="mt-4">
             <ConnectButton></ConnectButton>
@@ -168,7 +168,14 @@ const WithDraw: React.FC = () => {
         </p>
 
         {/* Withdraw ETH Button */}
-        <motion.button
+        <Button
+          handleClick={handleWithdraw}
+          disabled={withDrawloading || !Number(userData.availableAmount)}
+          loading={withDrawloading}
+        >
+          Withdraw ETH
+        </Button>
+        {/* <motion.button
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.97 }}
           disabled={!Number(userData.availableAmount)}
@@ -181,7 +188,7 @@ const WithDraw: React.FC = () => {
           )}
         >
           ↑ Withdraw ETH
-        </motion.button>
+        </motion.button> */}
       </motion.div>
     </div>
   );
