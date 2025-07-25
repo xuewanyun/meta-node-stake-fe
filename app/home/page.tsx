@@ -12,9 +12,7 @@ import Button from "@/components/ui/Button";
 
 const Home: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState("home");
-
   const { stakingContract } = useContract();
-
   const provider = useEthersProvider();
   const [amount, setAmount] = useState("");
   const { data: walletClient } = useWalletClient();
